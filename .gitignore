@@ -1,0 +1,42 @@
+# =========================
+# Build outputs
+# =========================
+build/
+
+# Fortran / compiler artifacts
+*.o
+*.obj
+*.mod
+*.smod
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+# dependency / module cache (compiler dependent)
+*.d
+*.dep
+
+# =========================
+# Python / notebook
+# =========================
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# =========================
+# Editor / IDE
+# =========================
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
