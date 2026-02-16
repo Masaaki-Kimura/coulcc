@@ -52,7 +52,7 @@ PREFIX      ?= $(BUILDDIR)/install
 INSTALL_LIB := $(PREFIX)/lib
 INSTALL_INC := $(PREFIX)/include
 
-.PHONY: all dirs clean static shared test test_static test_shared run export_mod install uninstall
+.PHONY: all dirs clean static shared test test_static test_shared run export_mod install uninstall check_prefix
 
 all: static shared test
 
@@ -133,7 +133,12 @@ run: test
 #     $(PREFIX)/include
 #     $(PREFIX)/lib
 # -------------------------
-install: static shared export_mod
+check_prefix:
+ifeq ($(origin PREFIX),file)
+	$(error ERROR: Please specify PREFIX explicitly, e.g. `make install PREFIX=/path/to/install`)
+endif
+
+install: check_prefix static shared export_mod
 	@mkdir -p $(INSTALL_LIB) $(INSTALL_INC)
 	cp -f $(STATICLIB) $(INSTALL_LIB)/
 	cp -f $(SHAREDLIB) $(INSTALL_LIB)/
