@@ -1,21 +1,9 @@
 # -------------------------
 # Toolchain (user-overridable)
 # -------------------------
-FC     ?= gfortran
+FC     = gfortran
 AR     ?= ar
 RANLIB ?= ranlib
-
-# -------------------------
-# Flags
-# -------------------------
-FFLAGS  ?= -O2 -Wall -Wextra -std=f2008
-LDFLAGS ?=
-
-# -------------------------
-# Sources
-# -------------------------
-SRC     := src/mod_coulcc37.f90
-TESTSRC := tests/test_coulcc.f90
 
 # -------------------------
 # Build dirs
@@ -26,6 +14,43 @@ MODDIR   := $(BUILDDIR)/mod
 INCDIR   := $(BUILDDIR)/include
 LIBDIR   := $(BUILDDIR)/lib
 BINDIR   := $(BUILDDIR)/bin
+
+# -------------------------
+# Flags (compiler-dependent)
+# -------------------------
+LDFLAGS ?=
+
+# Common optimization etc. (user can append via FFLAGS_USER)
+FFLAGS_BASE ?= -O2
+FFLAGS_USER ?=
+
+# Select flags by compiler
+#  - module output: gfortran => -J, ifx => -module
+#  - warnings:      gfortran => -Wall -Wextra, ifx => -warn
+#  - preprocessor:  gfortran => -cpp, ifx => -fpp
+ifeq ($(FC),ifx)
+  MODOUT    := -module $(MODDIR)
+  WARNFLAGS := -warn
+  PPFLAGS   := -fpp
+  STDFLAG   :=
+else ifeq ($(FC),gfortran)
+  MODOUT    := -J$(MODDIR)
+  WARNFLAGS := -Wall -Wextra
+  PPFLAGS   := -cpp
+  STDFLAG   := -std=f2008
+else
+  $(error Unknown FC=$(FC). Use FC=gfortran or FC=ifx)
+endif
+
+# Final Fortran flags used for compilation
+FFLAGS := $(FFLAGS_BASE) $(PPFLAGS) $(WARNFLAGS) $(STDFLAG) $(FFLAGS_USER)
+
+# -------------------------
+# Sources
+# -------------------------
+SRC     := src/mod_coulcc37.f90
+TESTSRC := tests/test_coulcc.f90
+
 
 # -------------------------
 # Outputs
@@ -54,7 +79,7 @@ INSTALL_INC := $(PREFIX)/include
 
 .PHONY: all dirs clean static shared test test_static test_shared run export_mod install uninstall check_prefix
 
-all: static shared test
+all: static shared test message
 
 dirs:
 	@mkdir -p $(OBJDIR) $(MODDIR) $(INCDIR) $(LIBDIR) $(BINDIR)
@@ -63,10 +88,10 @@ dirs:
 # Compile objects
 # -------------------------
 $(OBJ): $(SRC) | dirs
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) -c $< -o $@
+	$(FC) $(FFLAGS) $(MODOUT) -I$(MODDIR) -c $< -o $@
 
 $(OBJ_PIC): $(SRC) | dirs
-	$(FC) $(FFLAGS) -fPIC -J$(MODDIR) -I$(MODDIR) -c $< -o $@
+	$(FC) $(FFLAGS) -fPIC $(MODOUT) -I$(MODDIR) -c $< -o $@
 
 # -------------------------
 # Static library
@@ -84,6 +109,10 @@ shared: $(SHAREDLIB) export_mod
 
 $(SHAREDLIB): $(OBJ_PIC) | dirs
 	$(FC) -shared -o $@ $^
+
+message:
+	@echo 
+	@echo "Build complete. To install, run: make install PREFIX=/path/to/install"
 
 # -------------------------
 # Export only public .mod
@@ -104,7 +133,7 @@ $(PUBLIC_MOD_PATH): $(OBJ) | dirs
 #   - do NOT add -I$(MODDIR) here, to ensure internals stay hidden
 # -------------------------
 $(TESTOBJ): $(TESTSRC) export_mod | dirs
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(INCDIR) -c $< -o $@
+	$(FC) $(FFLAGS) $(MODOUT) -I$(INCDIR) -c $< -o $@
 
 test: test_static test_shared
 test_static: $(BINDIR)/test_static.exe

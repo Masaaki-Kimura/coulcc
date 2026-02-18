@@ -39,9 +39,13 @@ mod_coulcc/
 ## Build
 
 ### Build everything
-
+Default build (gfortran):
 ```bash
 make
+```
+Build with intel Fortran compiler:
+```bash
+make FC=ifx
 ```
 
 This creates:
@@ -94,12 +98,17 @@ Result:
 
 ```bash
 gfortran -I/path/to/install/include -c user_code.f90
+ifx -I/path/to/install/include -c user_code.f90
 ```
 
 ### Link
 
 ```bash
-gfortran user_code.o -L/path/to/install/lib -lcoulcc
+gfortran user_code.o -L/path/to/install/lib -lcoulcc\
+ -Wl,-rpath,'$ORIGIN/path/to/install/lib' # this is for finding the shared library at runtime
+
+ifx user_code.o -L/path/to/install/lib -lcoulcc\
+ -Wl,-rpath,'$ORIGIN/path/to/install/lib' # this is for finding the shared library at runtime
 ```
 
 
